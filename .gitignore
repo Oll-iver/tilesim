@@ -1,0 +1,17 @@
+# Build directories and CMake output
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+
+# Compiled binaries and object files
+*.o
+*.obj
+*.exe
+*.out
+tilesim
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store

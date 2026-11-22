@@ -1,0 +1,13 @@
+{
+    "numTiles": 1472,
+    "tileSRAM": 624,
+    "reserveSRAM": 64,
+    "flops": 128,
+    "exchangeBytes": 4,
+    "latency": 150,
+    "computeOverhead": 20,
+    "clock": 1.33,
+    "multicast": true
+
+
+}
