@@ -8,11 +8,6 @@
 #include <stdexcept>
 #include <vector>
 
-// TODO use traceWriter here to generate perfetto trace
-// tile's duration known -> record compute -> last tile arrives -> 
-// barrier completes -> record barrier 
-// -> message scheduled -> record send on sender, receive on each receiver (start -> end, bytes)
-// -> next superstep
 
 namespace tilesim {
 

@@ -17,9 +17,6 @@
 
 using namespace tilesim;
 
-// TODO implement --trace
-// parse both -> reject --trace for plan/layer/straggler  -> create writer (path, clock, N) 
-// -> put in sim options -> runBoth -> close writer
 
 struct layerShape {
     std::int64_t tokens = 0;
