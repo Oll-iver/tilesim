@@ -64,6 +64,9 @@ std::string stragglerRow(const Accelerator& acc, const stragglerExperiment& expe
 std::string formatStraggler(const Accelerator& acc, const stragglerExperiment& experiment,
                             const stragglerOutcome& outcome);
 
+
+//TODO: tracewriter currently gives slice_spill_overlapping_complete_event
+// in perfetto. should be an easy fix???s
 class traceWriter {
   public:
     traceWriter(const std::string& path, double clock, std::int64_t traced);

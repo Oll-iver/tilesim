@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "gemm.hpp"
 #include "machine.hpp"
@@ -99,6 +100,8 @@ struct Options {
     std::int64_t seeds = 5;
     std::int64_t m = 0, n = 0, k = 0;
     std::int64_t tokens = 0, dModel = 0, dFF = 0;
+    std::int64_t traceTiles=16;
+    std::string tracePath;
 };
 
 void printUsage() {
@@ -108,7 +111,7 @@ void printUsage() {
               << "  tilesim layer TOKENS DMODEL DFF [options]\n"
               << "  tilesim straggler [options]\n\n"
               << "Common options:\n"
-              << "  --config FILE       Load machine JSON config\n"
+              << "  --config FILE      Load machine JSON config\n"
               << "  --tiles N           Override number of tiles\n"
               << "  --no-multicast      Disable hardware multicast\n"
               << "  --jitter SIGMA      Lognormal compute jitter sigma\n"
@@ -118,7 +121,9 @@ void printUsage() {
               << "  --limit N           Max plans to show (plan only, default: 10)\n"
               << "  --steps N           Supersteps (straggler only, default: 50)\n"
               << "  --cycles N          Work cycles/step (straggler only, default: 10000)\n"
-              << "  --seeds N           Number of seeds (straggler only, default: 5)\n";
+              << "  --seeds N           Number of seeds (straggler only, default: 5)\n"
+              << " --trace FILE          Write Perfetto trace of the run (gemm only)\n"
+              <<" --trace-tiles N       Tiles shown in trace (default:16)\n";    
 }
 
 std::string nextArg(int& i, int argc, char** argv, const std::string& flag) {
@@ -159,7 +164,12 @@ void parseFlags(int startIdx, int argc, char** argv, Options& opt) {
             opt.cycles = std::stoll(nextArg(i, argc, argv, arg));
         } else if (arg == "--seeds") {
             opt.seeds = std::stoll(nextArg(i, argc, argv, arg));
-        } else {
+        } else if (arg=="--trace"){
+            opt.tracePath = nextArg(i,argc,argv,arg);
+        } else if (arg=="--trace-tiles"){
+            opt.traceTiles=std::stoll(nextArg(i,argc,argv,arg));
+        }
+        else {
             throw std::invalid_argument("unknown option: " + arg);
         }
     }
@@ -223,7 +233,21 @@ int cmdGemm(const Options& opt) {
     sim.jitterSigma = opt.jitter;
     sim.seed = opt.seed;
 
+    std::unique_ptr<traceWriter> trace;
+    std::int64_t tracedTiles = std::min(opt.traceTiles,acc.numTiles);
+    if (!opt.tracePath.empty()) {
+        if (opt.traceTiles <= 0) {
+            throw std::invalid_argument("--trace-tiles must be nonzero");
+        }
+        trace = std::make_unique<traceWriter>(opt.tracePath,acc.clock,tracedTiles);
+        sim.trace = trace.get();
+    }
+
     std::vector<runRecord> runs = runBoth(acc, "gemm", shape, plan, sim);
+
+    if(trace){
+        trace->close();
+    }
 
     if (opt.csv) {
         std::cout << csvHeader();
@@ -244,6 +268,9 @@ int cmdGemm(const Options& opt) {
     std::cout << "sram      peak " << (peakSRAM(shape, plan) / 1024) << " KiB per tile of "
               << (usableSRAM(acc) / 1024) << " KiB usable\n";
     std::cout << "estimate  " << estCycles(acc, shape, plan) << " cycles (closed form)\n\n";
+    if (trace){
+        std::cout << "trace" << opt.tracePath << " first " << tracedTiles << "tiles\n";
+    }
     std::cout << formatTable(acc, runs, false);
     return 0;
 }
@@ -375,6 +402,9 @@ int main(int argc, char** argv) {
             opt.n = std::stoll(argv[3]);
             opt.k = std::stoll(argv[4]);
             parseFlags(5, argc, argv, opt);
+            if (cmd=="plan"&&!opt.tracePath.empty()){
+                throw std::invalid_argument("--trace unsupported for this operation type");
+            }
             validate(opt.machine);
             return (cmd == "gemm") ? cmdGemm(opt) : cmdPlan(opt);
 
@@ -386,11 +416,17 @@ int main(int argc, char** argv) {
             opt.dModel = std::stoll(argv[3]);
             opt.dFF = std::stoll(argv[4]);
             parseFlags(5, argc, argv, opt);
+            if (!opt.tracePath.empty()){
+                throw std::invalid_argument("--trace unsupported for this operation type");
+            }
             validate(opt.machine);
             return cmdLayer(opt);
 
         } else if (cmd == "straggler") {
             parseFlags(2, argc, argv, opt);
+            if (cmd=="plan"&&!opt.tracePath.empty()){
+                throw std::invalid_argument("--trace unsupported for this operation type");
+            }
             validate(opt.machine);
             return cmdStraggler(opt);
 

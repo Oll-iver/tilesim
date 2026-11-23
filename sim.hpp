@@ -13,6 +13,7 @@ class traceWriter;
 struct SimOptions {
     double jitterSigma = 0.0;
     std::uint64_t seed = 1;
+    traceWriter* trace = nullptr;
 };
 
 Result simulate(const Accelerator& acc, const Program& program, const SimOptions& options = {});

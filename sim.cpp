@@ -1,4 +1,5 @@
 #include "sim.hpp"
+#include "out.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -8,11 +9,10 @@
 #include <vector>
 
 // TODO use traceWriter here to generate perfetto trace
-//   tile's duration known -> record compute (step start -> tile finish; skip tiles with no work)
-//   -> last tile arrives -> barrier completes -> record barrier (last arrival -> barrier done)
-//   -> message scheduled -> record send on sender, receive on each receiver (start -> end, bytes)
-//      multicast: 1 send, n receives; unicast: 1 send + 1 receive per copy
-//   -> next superstep
+// tile's duration known -> record compute -> last tile arrives -> 
+// barrier completes -> record barrier 
+// -> message scheduled -> record send on sender, receive on each receiver (start -> end, bytes)
+// -> next superstep
 
 namespace tilesim {
 
@@ -80,6 +80,9 @@ Result simulate(const Accelerator& acc, const Program& program, const SimOptions
                 }
             }
             pq.push({timeStepStart + dur, nextSeq++, eventType::tileDone});
+            if (options.trace && dur >0){
+                options.trace->compute(t,timeStepStart,timeStepStart+dur,std::int64_t(s));
+            }
         }
 
         while (!pq.empty()) {
@@ -95,7 +98,9 @@ Result simulate(const Accelerator& acc, const Program& program, const SimOptions
                 }
             } else if (ev.type == eventType::barrierDone) {
                 timeBarrierDone = now;
-
+                if (options.trace){
+                    options.trace->barrier(timeAllArrived,timeBarrierDone,std::int64_t(s));
+                }
                 if (!step.messages.empty()) {
                     std::int64_t exchStart = timeBarrierDone + acc.latency;
                     std::vector<std::int64_t> txBusy(program.numTiles, exchStart);
@@ -117,6 +122,12 @@ Result simulate(const Accelerator& acc, const Program& program, const SimOptions
                                 rxBusy[dst] = end;
 
                             pq.push({end, nextSeq++, eventType::messageDone});
+                            if (options.trace){
+                                options.trace->send(m.src,start,end,m.bytes);
+                                for (std::int64_t dst:m.dsts){
+                                    options.trace->receive(dst,start,end,m.bytes);
+                                }
+                            }
                         } else {
                             // Unicast: send one copy per destination
                             for (std::int64_t dst : m.dsts) {
@@ -126,6 +137,10 @@ Result simulate(const Accelerator& acc, const Program& program, const SimOptions
                                 rxBusy[dst] = end;
 
                                 pq.push({end, nextSeq++, eventType::messageDone});
+                                if (options.trace){
+                                    options.trace->send(m.src,start,end,m.bytes);
+                                    options.trace->receive(dst,start,end,m.bytes);
+                                }
                             }
                         }
                     }
