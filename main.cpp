@@ -12,7 +12,13 @@
 #include "program.hpp"
 #include "sim.hpp"
 
+
+
 using namespace tilesim;
+
+// TODO implement --trace
+// parse both -> reject --trace for plan/layer/straggler  -> create writer (path, clock, N) 
+// -> put in sim options -> runBoth -> close writer
 
 struct layerShape {
     std::int64_t tokens = 0;
@@ -27,7 +33,7 @@ struct namedGemm {
 
 std::vector<namedGemm> transformerLayer(const layerShape& layer) {
     if (layer.tokens <= 0 || layer.dModel <= 0 || layer.dFF <= 0) {
-        throw std::invalid_argument("layer dimensions cannot be negative");
+        throw std::invalid_argument("layer dimensions cannot be nonpositive");
     }
     std::int64_t t = layer.tokens;
     std::int64_t d = layer.dModel;

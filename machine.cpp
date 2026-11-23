@@ -13,7 +13,7 @@ namespace tilesim {
 Accelerator loadConfig(const std::string& path) {
     std::ifstream f(path);
     if (!f.is_open()) {
-        throw std::runtime_error("failed to open config" + path);
+        throw std::runtime_error("failed to open config " + path);
     }
 
     json j = json::parse(f);
@@ -51,7 +51,7 @@ void validate(const Accelerator& acc) {
                                     "exchange bytes per cycle must be greater than zero.");
     }
     if (acc.latency < 0 || acc.messageOverhead < 0 || acc.computeOverhead < 0)
-        throw std::invalid_argument("Latency and overhead cannot be negtivem");
+        throw std::invalid_argument("Latency and overhead cannot be negative");
 }
 
 double peakFlops(const Accelerator& acc) {

@@ -17,7 +17,7 @@ void validateProgram(const Program& program, const Accelerator& acc) {
     }
     if (program.numTiles != acc.numTiles) {
         throw std::invalid_argument("Program has " + std::to_string(program.numTiles) +
-                                    "tiles, accelerator has " + std::to_string(acc.numTiles));
+                                    " tiles, accelerator has " + std::to_string(acc.numTiles));
     }
 
     for (std::size_t s = 0; s < program.steps.size(); s++) {
@@ -73,7 +73,7 @@ std::int64_t totalFlops(const Program& program) {
     return total;
 }
 
-std::int64_t totalReceieved(const Program& program) {
+std::int64_t totalReceived(const Program& program) {
     std::int64_t total = 0;
     for (const Superstep& step : program.steps) {
         for (const Message& msg : step.messages) {

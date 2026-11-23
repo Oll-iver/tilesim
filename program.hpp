@@ -48,7 +48,7 @@ struct Result {
 void validateProgram(const Program& program, const Accelerator& acc);
 
 std::int64_t totalFlops(const Program& program);
-std::int64_t totalReceieved(const Program& program);
+std::int64_t totalReceived(const Program& program);
 std::int64_t computeCycles(const Accelerator& acc, std::int64_t flops);
 std::int64_t messageCycles(const Accelerator& acc, std::int64_t bytes);
 std::int64_t portBound(const Accelerator& acc, std::int64_t numTiles,

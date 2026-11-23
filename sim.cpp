@@ -7,6 +7,13 @@
 #include <stdexcept>
 #include <vector>
 
+// TODO use traceWriter here to generate perfetto trace
+//   tile's duration known -> record compute (step start -> tile finish; skip tiles with no work)
+//   -> last tile arrives -> barrier completes -> record barrier (last arrival -> barrier done)
+//   -> message scheduled -> record send on sender, receive on each receiver (start -> end, bytes)
+//      multicast: 1 send, n receives; unicast: 1 send + 1 receive per copy
+//   -> next superstep
+
 namespace tilesim {
 
 enum class eventType { tileDone, barrierDone, messageDone };

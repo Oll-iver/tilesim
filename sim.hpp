@@ -7,6 +7,13 @@
 
 namespace tilesim {
 
+class traceWriter;
+
+struct SimOptions {
+    double jitterSigma = 0.0;
+    std::uint64_t seed = 1;
+};
+
 struct SimOptions {
     double jitterSigma = 0.0;
     std::uint64_t seed = 1;
